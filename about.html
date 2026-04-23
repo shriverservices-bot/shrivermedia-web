@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Meet the team at J Shriver Media: Jake Shriver, Maria Garcia, and Ben Carter. Find answers to frequently asked questions about our web design services.">
+    <meta name="keywords" content="J Shriver Media team, web design FAQ, Jake Shriver, Greenville web developers">
+    <title>About & FAQ | J Shriver Media</title>
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://jshrivermedia.com/about.html">
+    <meta property="og:title" content="About & FAQ | J Shriver Media">
+    <meta property="og:description" content="Meet the incredible team behind J Shriver Media. View our frequently asked questions about our process, design, and marketing approach.">
+    <meta property="og:image" content="https://jshrivermedia.com/media/reedy.jpg">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://jshrivermedia.com/about.html">
+    <meta property="twitter:title" content="About & FAQ | J Shriver Media">
+    <meta property="twitter:description" content="Meet the incredible team behind J Shriver Media. View our frequently asked questions about our process, design, and marketing approach.">
+    <meta property="twitter:image" content="https://jshrivermedia.com/media/reedy.jpg">
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://jshrivermedia.com/about.html">
+
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .team-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 2rem;
+            text-align: center;
+            transition: var(--transition);
+        }
+        .team-card:hover {
+            border-color: var(--accent-green);
+            transform: translateY(-5px);
+        }
+        .team-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .team-card p {
+            color: var(--accent-green);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .faq-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .faq-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: var(--transition);
+        }
+        .faq-item:hover {
+            border-color: var(--accent-green);
+        }
+        .faq-item h4 {
+            font-size: 1.25rem;
+            color: var(--accent-green);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .faq-item h4 span {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2rem;
+            opacity: 0.2;
+        }
+        .faq-item p {
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <div class="background-logo-container">
+        <img src="media/THE_ONE-removebg-preview.png" alt="Shriver Media Background Logo" class="interactive-bg-logo">
+    </div>
+    <header>
+        <a href="index.html" class="logo"><span class="logo-j">J</span>SHRIVER<span>MEDIA</span></a>
+        <button class="hamburger">☰</button>
+        <nav>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="services.html">Services & Pricing</a></li>
+                <li><a href="about.html">About & FAQ</a></li>
+                <li><a href="blog.html">Blog</a></li>
+                <li><a href="https://calendly.com/shriverservices" class="btn btn-primary" target="_blank">Get Quote</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main style="padding-top: 8rem;">
+        <section class="section">
+            <div class="section-header animate-on-scroll">
+                <h2>The Wizards Behind the <span>Curtain</span></h2>
+                <p>Meet the brilliant minds at Shriver Media. We're the ones making digital magic happen.</p>
+            </div>
+            
+            <div class="team-grid">
+                <div class="team-card animate-on-scroll">
+                    <h3>Jake Shriver</h3>
+                    <p>/ Developer & Business Owner /</p>
+                </div>
+                <div class="team-card animate-on-scroll" style="transition-delay: 0.1s;">
+                    <h3>Maria Garcia</h3>
+                    <p>/ Design UX /</p>
+                </div>
+                <div class="team-card animate-on-scroll" style="transition-delay: 0.2s;">
+                    <h3>Ben Carter</h3>
+                    <p>/ SEO Guru /</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" style="background: radial-gradient(circle at bottom, rgba(74, 222, 128, 0.05) 0%, transparent 50%);">
+            <div class="section-header animate-on-scroll">
+                <h2>We Have <span>Answers</span></h2>
+                <p>Everything you need to know about working with us.</p>
+            </div>
+            
+            <div class="faq-container">
+                <div class="faq-item animate-on-scroll">
+                    <h4><span>01</span> How fast is 'fast'?</h4>
+                    <p>We aim for a speedy launch, often within days, not months. We respect your time and your sanity.</p>
+                </div>
+                
+                <div class="faq-item animate-on-scroll" style="transition-delay: 0.1s;">
+                    <h4><span>02</span> What if I want changes?</h4>
+                    <p>Unlimited edits mean we keep tweaking until you love it. Your satisfaction is our mission.</p>
+                </div>
+                
+                <div class="faq-item animate-on-scroll" style="transition-delay: 0.2s;">
+                    <h4><span>03</span> Is it mobile-friendly?</h4>
+                    <p>Absolutely. Every site is designed to look amazing and work perfectly on any device.</p>
+                </div>
+                
+                <div class="faq-item animate-on-scroll" style="transition-delay: 0.3s;">
+                    <h4><span>04</span> What about after launch?</h4>
+                    <p>We offer ongoing support and maintenance. Your website is our baby, and we'll care for it.</p>
+                </div>
+            </div>
+            
+            <div class="section-header animate-on-scroll" style="margin-top: 3rem; margin-bottom: 0;">
+                <a href="https://calendly.com/shriverservices" target="_blank" class="btn btn-primary">Ask More Questions</a>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-col">
+                <a href="index.html" class="logo" style="margin-bottom: 1rem;"><span class="logo-j">J</span>SHRIVER<span>MEDIA</span></a>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">Engineering growth through elite digital experiences.</p>
+                <p style="color: var(--text-secondary);">Greenville, SC<br>864-382-8708<br>shriverservices@gmail.com</p>
+            </div>
+            <div class="footer-col">
+                <h4>Company</h4>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="services.html">Services</a></li>
+                    <li><a href="about.html">About & FAQ</a></li>
+                    <li><a href="blog.html">Blog</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Connect</h4>
+                <ul>
+                    <li><a href="https://calendly.com/shriverservices" target="_blank">Get a Quote</a></li>
+                    <li><a href="https://calendly.com/shriverservices" target="_blank">Book Consultation</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Shriver Media LLC. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
