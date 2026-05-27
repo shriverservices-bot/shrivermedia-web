@@ -121,6 +121,20 @@ header {
   color: var(--accent-green);
 }
 
+/* Ensure the navigation button is extremely easy to read, ignoring generic link overrides */
+.nav-links .btn {
+  padding: 0.6rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 800; /* Boldest weight for maximum readability */
+  color: #000000 !important; /* Forces high-contrast black text on bright green background */
+  box-shadow: 0 4px 12px rgba(74, 222, 128, 0.4);
+}
+
+.nav-links .btn:hover {
+  color: var(--accent-green) !important; /* High contrast green on transparent outline on hover */
+}
+
+
 .hamburger {
   display: none;
   background: none;
@@ -438,4 +452,87 @@ body.mouse-moving .interactive-bg-logo {
   opacity: 0.50;
   filter: grayscale(0%);
 }
+
+/* Partners Carousel Section Styles */
+.partners-section {
+  padding: 6rem 5% 4rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.partners-carousel {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  padding: 2.5rem 0;
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  background: rgba(20, 35, 20, 0.2);
+  backdrop-filter: var(--glass-blur);
+  /* Premium edge fades so logos fade in/out smoothly */
+  mask-image: linear-gradient(to right, transparent, #000 15%, #000 85%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 15%, #000 85%, transparent);
+}
+
+.partners-track {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  gap: 4rem;
+  /* Always animate from left to right */
+  animation: marquee-ltr 25s linear infinite;
+}
+
+.partner-card {
+  flex: 0 0 auto;
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  padding: 1.25rem;
+  transition: var(--transition);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.partner-card img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  filter: grayscale(20%) brightness(0.95);
+  opacity: 0.85;
+  transition: var(--transition);
+}
+
+/* Card hover scaling and glow effect */
+.partner-card:hover {
+  transform: translateY(-5px) scale(1.05);
+  border-color: var(--accent-green);
+  box-shadow: 0 10px 25px rgba(74, 222, 128, 0.2);
+  background: rgba(30, 50, 30, 0.7);
+}
+
+.partner-card:hover img {
+  filter: grayscale(0%) brightness(1);
+  opacity: 1;
+}
+
+/* Pause the animation on hover so users can easily view or click a partner */
+.partners-carousel:hover .partners-track {
+  animation-play-state: paused;
+}
+
+@keyframes marquee-ltr {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(-25%);
+  }
+}
+
 
