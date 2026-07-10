@@ -9,19 +9,49 @@ if (hamburger) {
     });
 }
 
+// Close mobile nav when clicking outside or on a link
+document.addEventListener('click', (e) => {
+    if (navLinks && navLinks.classList.contains('active')) {
+        if (!navLinks.contains(e.target) && !hamburger.contains(e.target)) {
+            navLinks.classList.remove('active');
+            hamburger.innerHTML = '☰';
+        }
+    }
+});
+
+navLinks?.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => {
+        navLinks.classList.remove('active');
+        if (hamburger) hamburger.innerHTML = '☰';
+    });
+});
+
+// Floating Header State Transition
+const header = document.querySelector('header');
+if (header) {
+    const handleScroll = () => {
+        if (window.scrollY > 30) {
+            header.classList.add('scrolled');
+        } else {
+            header.classList.remove('scrolled');
+        }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    // Run on initial load
+    handleScroll();
+}
+
 // High Performance Scroll Animations using Intersection Observer
 const observerOptions = {
     root: null,
     rootMargin: '0px',
-    threshold: 0.15
+    threshold: 0.12
 };
 
-const observer = new IntersectionObserver((entries, observer) => {
+const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
         if (entry.isIntersecting) {
             entry.target.classList.add('is-visible');
-            // Optional: Stop observing once animated if you only want it to happen once
-            // observer.unobserve(entry.target); 
         }
     });
 }, observerOptions);
@@ -33,34 +63,57 @@ animatedElements.forEach(el => observer.observe(el));
 const currentPath = window.location.pathname;
 const navItems = document.querySelectorAll('.nav-links a');
 navItems.forEach(link => {
-    if (link.getAttribute('href') === currentPath.split('/').pop() || (currentPath === '/' && link.getAttribute('href') === 'index.html')) {
+    const href = link.getAttribute('href');
+    if (href === currentPath.split('/').pop() || (currentPath === '/' && href === 'index.html')) {
         link.classList.add('active');
     }
 });
 
-// Background Logo Parallax and Hover effect
-const bgLogo = document.querySelector('.interactive-bg-logo');
-let timeout;
+// Create and Animate Cursor Glow Follower
+const createCursorGlow = () => {
+    // Avoid creating on mobile devices as hover isn't applicable
+    if (window.matchMedia('(pointer: coarse)').matches) return;
 
-if (bgLogo) {
+    const glow = document.createElement('div');
+    glow.classList.add('mouse-glow');
+    document.body.appendChild(glow);
+
+    let mouseX = window.innerWidth / 2;
+    let mouseY = window.innerHeight / 2;
+    let glowX = mouseX;
+    let glowY = mouseY;
+
     document.addEventListener('mousemove', (e) => {
-        // Apply class for opacity/color change
-        document.body.classList.add('mouse-moving');
-        
-        // Clear timeout
-        clearTimeout(timeout);
-        
-        // Set timeout to remove class if mouse stops
-        timeout = setTimeout(() => {
-            document.body.classList.remove('mouse-moving');
-        }, 1000);
-
-        // Calculate parallax tilt
-        const x = (e.clientX / window.innerWidth - 0.5) * 2;
-        const y = (e.clientY / window.innerHeight - 0.5) * 2;
-        
-        // Update transform
-        // Max rotation set to 25 degrees
-        bgLogo.style.transform = `rotateY(${x * 25}deg) rotateX(${-y * 25}deg) scale(1.05)`;
+        mouseX = e.clientX;
+        mouseY = e.clientY;
     });
-}
+
+    const animateGlow = () => {
+        glowX += (mouseX - glowX) * 0.08;
+        glowY += (mouseY - glowY) * 0.08;
+        glow.style.transform = `translate3d(${glowX}px, ${glowY}px, 0) translate(-50%, -50%)`;
+        requestAnimationFrame(animateGlow);
+    };
+    requestAnimationFrame(animateGlow);
+};
+
+// Initialize cursor glow after page load
+window.addEventListener('load', createCursorGlow);
+
+// Card Interactive Spotlight Spotlight Coordinates Tracker
+const initCardSpotlights = () => {
+    const cards = document.querySelectorAll('.card');
+    cards.forEach(card => {
+        card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            card.style.setProperty('--mouse-x', `${x}px`);
+            card.style.setProperty('--mouse-y', `${y}px`);
+        });
+    });
+};
+
+initCardSpotlights();
+// Expose for dynamic content loading (e.g. React rendered sections)
+window.initCardSpotlights = initCardSpotlights;
