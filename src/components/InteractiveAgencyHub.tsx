@@ -89,7 +89,8 @@ export function InteractiveAgencyHub() {
   };
 
   return (
-    <section className="py-20 px-[5%] max-w-[1250px] mx-auto z-10 relative">
+    <section className="py-10 px-[5%] max-w-[1250px] mx-auto z-10 relative">
+
       <div className="section-header animate-on-scroll">
         <h2>Experience <span>Our Capabilities</span></h2>
         <p>Use our interactive simulator to explore the performance, design depth, and cinematic precision we bring to every partnership.</p>
