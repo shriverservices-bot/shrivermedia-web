@@ -14,7 +14,7 @@ export function Hero3D() {
   ];
 
   return (
-    <div className="relative w-full h-[95vh] min-h-[600px] overflow-hidden bg-black flex items-center justify-center">
+    <div className="relative w-full h-[95vh] min-h-[600px] overflow-hidden bg-transparent flex items-center justify-center">
       {/* 3D WebGL Infinite Gallery Background */}
       <div className="absolute inset-0 z-0">
         <InfiniteGallery
