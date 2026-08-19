@@ -1,16 +1,22 @@
 import React from "react";
 import InfiniteGallery from "./ui/3d-gallery-photography";
 
+import cheapassPartner from "../../media/cheapass partner.png";
+import colePartner from "../../media/cole partner.png";
+import riseupPartner from "../../media/riseup partner.png";
+import setbreakPartner from "../../media/setbreak partner.png";
+import southernPartner from "../../media/southern partner.webp";
+
 export function Hero3D() {
   const sampleImages = [
-    { src: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=1200&auto=format&fit=crop', alt: 'Web Design' },
-    { src: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200&auto=format&fit=crop', alt: 'Analytics' },
-    { src: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1200&auto=format&fit=crop', alt: 'Code' },
-    { src: 'https://images.unsplash.com/photo-1533750516457-a7f992034fec?q=80&w=1200&auto=format&fit=crop', alt: 'Marketing' },
-    { src: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?q=80&w=1200&auto=format&fit=crop', alt: 'Photography' },
-    { src: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1200&auto=format&fit=crop', alt: 'Development' },
-    { src: 'https://images.unsplash.com/photo-1522542550221-31fd19575a2d?q=80&w=1200&auto=format&fit=crop', alt: 'Design Mockup' },
-    { src: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=1200&auto=format&fit=crop', alt: 'Growth' },
+    { src: cheapassPartner, alt: 'Cheapass Partner' },
+    { src: colePartner, alt: 'Cole Partner' },
+    { src: riseupPartner, alt: 'Riseup Partner' },
+    { src: setbreakPartner, alt: 'Set Break Partner' },
+    { src: southernPartner, alt: 'Southern Partner' },
+    { src: cheapassPartner, alt: 'Cheapass Partner' },
+    { src: colePartner, alt: 'Cole Partner' },
+    { src: riseupPartner, alt: 'Riseup Partner' },
   ];
 
   return (

@@ -119,30 +119,65 @@ const createClothMaterial = () => {
       varying vec3 vNormal;
       
       void main() {
-        vec4 color = texture2D(map, vUv);
+        // Calculate distance from center (0.5, 0.5)
+        float dist = length(vUv - vec2(0.5));
         
-        // Simple blur approximation
-        if (blurAmount > 0.0) {
-          vec2 texelSize = 1.0 / vec2(textureSize(map, 0));
-          vec4 blurred = vec4(0.0);
-          float total = 0.0;
-          
-          for (float x = -2.0; x <= 2.0; x += 1.0) {
-            for (float y = -2.0; y <= 2.0; y += 1.0) {
-              vec2 offset = vec2(x, y) * texelSize * blurAmount;
-              float weight = 1.0 / (1.0 + length(vec2(x, y)));
-              blurred += texture2D(map, vUv + offset) * weight;
-              total += weight;
-            }
-          }
-          color = blurred / total;
+        // Anti-aliased circle mask
+        float mask = 1.0 - smoothstep(0.485, 0.5, dist);
+        if (mask < 0.01) {
+          discard;
         }
+        
+        // Define card background: dark green-tinted transparent background
+        vec4 cardBg = vec4(0.03, 0.06, 0.03, 0.55);
+        
+        // Define border color: emerald green
+        vec4 borderColor = vec4(0.062, 0.725, 0.506, 0.85);
+        
+        // Blend border onto background near the edge
+        float borderWeight = smoothstep(0.465, 0.48, dist) * (1.0 - smoothstep(0.485, 0.5, dist));
+        vec4 finalBg = mix(cardBg, borderColor, borderWeight);
+        
+        // Logo with padding: logo scales to 72% of card size
+        float scaleVal = 0.72;
+        vec2 logoUv = (vUv - vec2(0.5)) / scaleVal + vec2(0.5);
+        
+        vec4 logoColor = vec4(0.0);
+        if (logoUv.x >= 0.0 && logoUv.x <= 1.0 && logoUv.y >= 0.0 && logoUv.y <= 1.0) {
+          if (blurAmount > 0.0) {
+            vec2 texelSize = 1.0 / vec2(textureSize(map, 0));
+            vec4 blurred = vec4(0.0);
+            float total = 0.0;
+            
+            for (float x = -2.0; x <= 2.0; x += 1.0) {
+              for (float y = -2.0; y <= 2.0; y += 1.0) {
+                vec2 offset = vec2(x, y) * texelSize * blurAmount;
+                float weight = 1.0 / (1.0 + length(vec2(x, y)));
+                vec2 sampleUv = logoUv + offset;
+                if (sampleUv.x >= 0.0 && sampleUv.x <= 1.0 && sampleUv.y >= 0.0 && sampleUv.y <= 1.0) {
+                  blurred += texture2D(map, sampleUv) * weight;
+                  total += weight;
+                }
+              }
+            }
+            if (total > 0.0) {
+              logoColor = blurred / total;
+            } else {
+              logoColor = texture2D(map, logoUv);
+            }
+          } else {
+            logoColor = texture2D(map, logoUv);
+          }
+        }
+        
+        // Blend logo color over the background (using logo's alpha)
+        vec4 blendedColor = mix(finalBg, logoColor, logoColor.a);
         
         // Add subtle lighting effect based on curving
         float curveHighlight = abs(scrollForce) * 0.05;
-        color.rgb += vec3(curveHighlight * 0.1);
+        blendedColor.rgb += vec3(curveHighlight * 0.1);
         
-        gl_FragColor = vec4(color.rgb, color.a * opacity);
+        gl_FragColor = vec4(blendedColor.rgb, blendedColor.a * opacity * mask);
       }
     `,
 	});
