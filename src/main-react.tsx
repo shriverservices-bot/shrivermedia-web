@@ -1,18 +1,19 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import { HeroScrollDemo } from "./components/HeroScrollDemo";
-import { Hero3D } from "./components/Hero3D";
+import MetroHero from "@/components/ui/scroll-locked-video-hero";
 import "./tailwind.css";
 
-// Mount the 3D Hero Gallery Canvas
+// Mount the Scroll-Locked Video Hero on the front page
 const canvasElement = document.getElementById("react-hero-canvas");
 if (canvasElement) {
   const canvasRoot = createRoot(canvasElement);
   canvasRoot.render(
     <React.StrictMode>
-      <Hero3D />
+      <MetroHero
+        title="JSHRIVER MEDIA"
+        tagline="Engineering high-performance digital experiences."
+        signature={false}
+      />
     </React.StrictMode>
   );
 }
-
-
