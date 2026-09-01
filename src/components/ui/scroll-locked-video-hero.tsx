@@ -1,18 +1,7 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
-
-// ─────────────────────────────────────────────────────────────
-// THE CITY OPENS — locked scroll-scrub video hero
-// The page cannot move while this is active — body is pinned
-// with position:fixed (the same bulletproof technique modal
-// libraries use; plain overflow:hidden alone isn't reliable
-// across browsers). Wheel/touch input is captured and used
-// purely to drive video.currentTime, forward and backward. Once
-// the video reaches the end and the user keeps pushing forward,
-// the page unlocks and continues normally — and re-locks if they
-// scroll back up into it. No dependencies, system fonts only.
-// ─────────────────────────────────────────────────────────────
+import React, { useEffect, useRef, useState } from "react"
+import subwayVideo from "../../../media/subway-hero.mp4"
 
 export interface MetroHeroProps {
   videoSrc?: string
@@ -20,18 +9,17 @@ export interface MetroHeroProps {
   scrollHint?: string
   tagline?: string
   signature?: { name: string; url: string } | false
-  /** Total input distance (px) needed to scrub the full video. Tune to taste. */
-  scrubDistance?: number
+  /** Total height of scroll track in vh (e.g. 240 for 240vh) */
+  scrollDistanceVh?: number
   className?: string
   style?: React.CSSProperties
 }
 
-const DEFAULT_VIDEO = "https://raw.githubusercontent.com/gughigug/metro-hero-assets/main/Subway_doors_open_to_city_202608242331.mp4"
-const DEFAULT_SIGNATURE = { name: "guglielmogiannattasio.exe", url: "https://www.guglielmogiannattasio.it" }
-const SANS = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+const DEFAULT_VIDEO = subwayVideo || "https://raw.githubusercontent.com/gughigug/metro-hero-assets/main/Subway_doors_open_to_city_202608242331.mp4"
+const SANS = "Outfit, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
 
-const COL_BG = "#05070d"
-const COL_TEXT = "#f2f4f8"
+const COL_BG = "#020502"
+const COL_TEXT = "#f3f4f8"
 
 function clamp(v: number, min: number, max: number) {
   return Math.min(max, Math.max(min, v))
@@ -39,15 +27,15 @@ function clamp(v: number, min: number, max: number) {
 
 export default function MetroHero({
   videoSrc = DEFAULT_VIDEO,
-  title = "THE CITY OPENS",
-  scrollHint = "SCROLL",
-  tagline = "Every door in the city is already open.",
-  signature = DEFAULT_SIGNATURE,
-  scrubDistance = 3200,
+  title = "JSHRIVER MEDIA",
+  scrollHint = "SCROLL TO ENTER",
+  tagline = "Engineering high-performance digital experiences.",
+  signature = false,
+  scrollDistanceVh = 240,
   className,
   style,
 }: MetroHeroProps) {
-  const sectionRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const titleRef = useRef<HTMLDivElement>(null)
   const hintRef = useRef<HTMLDivElement>(null)
@@ -57,169 +45,90 @@ export default function MetroHero({
 
   useEffect(() => {
     const video = videoRef.current
-    const section = sectionRef.current
-    if (!video || !section) return
-
-    const reduceMotion =
-      typeof window !== "undefined" &&
-      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+    const container = containerRef.current
+    if (!video || !container) return
 
     let duration = 0
-    let rafId = 0
     let targetProgress = 0
     let currentProgress = 0
-    let hasStartedScrolling = false
+    let rafId = 0
     let isSeeking = false
-    let pendingTime: number | null = null
-    let locked = false
-    let lockedScrollY = 0
-    let touchStartY = 0
 
-    const onLoadedData = () => {
-      duration = video.duration || 0
-      setReady(true)
-      if (reduceMotion) {
-        video.currentTime = duration * 0.92
+    const handleReady = () => {
+      if (video.duration && !isNaN(video.duration) && video.duration > 0) {
+        duration = video.duration
+        setReady(true)
       }
     }
-    video.addEventListener("loadeddata", onLoadedData)
+
+    video.addEventListener("loadedmetadata", handleReady)
+    video.addEventListener("loadeddata", handleReady)
+    video.addEventListener("canplay", handleReady)
+    video.addEventListener("canplaythrough", handleReady)
+
+    if (video.readyState >= 1 && video.duration) {
+      handleReady()
+    }
 
     const onSeeked = () => {
       isSeeking = false
-      if (pendingTime !== null) {
-        const t = pendingTime
-        pendingTime = null
-        isSeeking = true
-        video.currentTime = t
-      }
     }
     video.addEventListener("seeked", onSeeked)
 
-    function seekTo(t: number) {
-      if (isSeeking) {
-        pendingTime = t
-        return
-      }
-      isSeeking = true
-      video.currentTime = t
+    const handleScroll = () => {
+      if (!container) return
+      const rect = container.getBoundingClientRect()
+      const scrollableDistance = container.offsetHeight - window.innerHeight
+      if (scrollableDistance <= 0) return
+
+      const scrolled = -rect.top
+      const progress = clamp(scrolled / scrollableDistance, 0, 1)
+      targetProgress = progress
     }
 
-    // Locked while scrubbing through the video. Unlocks once completed
-    // so the rest of the page can be scrolled normally.
-    function engageLock() {
-      if (locked || typeof document === "undefined") return
-      locked = true
-      lockedScrollY = window.scrollY
-      const b = document.body.style
-      b.position = "fixed"
-      b.top = `-${lockedScrollY}px`
-      b.left = "0"
-      b.right = "0"
-      b.width = "100%"
-    }
+    window.addEventListener("scroll", handleScroll, { passive: true })
+    window.addEventListener("resize", handleScroll, { passive: true })
+    handleScroll()
 
-    function releaseLock() {
-      if (!locked || typeof document === "undefined") return
-      locked = false
-      const y = lockedScrollY
-      const b = document.body.style
-      b.position = ""
-      b.top = ""
-      b.left = ""
-      b.right = ""
-      b.width = ""
-      window.scrollTo(0, y)
-    }
+    // Smooth render loop
+    const frame = () => {
+      // Smooth lerping for video seeking
+      currentProgress += (targetProgress - currentProgress) * 0.22
 
-    engageLock()
-
-    function addDelta(deltaY: number) {
-      if (deltaY > 0 && targetProgress >= 0.999) {
-        if (locked) {
-          releaseLock()
+      if (duration > 0 && video) {
+        const targetTime = currentProgress * duration
+        if (!isSeeking && Math.abs(video.currentTime - targetTime) > 0.015) {
+          isSeeking = true
+          video.currentTime = targetTime
         }
-        return false
-      }
-
-      if (deltaY < 0 && !locked && window.scrollY <= 10) {
-        engageLock()
-        targetProgress = 0.999
-      }
-
-      const next = clamp(targetProgress + deltaY / scrubDistance, 0, 1)
-      targetProgress = next
-      if (targetProgress > 0.001) hasStartedScrolling = true
-      return true
-    }
-
-    const onWheel = (e: WheelEvent) => {
-      if (locked) {
-        const handled = addDelta(e.deltaY)
-        if (handled && targetProgress < 1) {
-          e.preventDefault()
-        }
-      } else {
-        if (window.scrollY <= 10 && e.deltaY < 0) {
-          engageLock()
-          addDelta(e.deltaY)
-          e.preventDefault()
-        }
-      }
-    }
-
-    const onTouchStart = (e: TouchEvent) => {
-      touchStartY = e.touches[0]?.clientY ?? 0
-    }
-    const onTouchMove = (e: TouchEvent) => {
-      const y = e.touches[0]?.clientY ?? touchStartY
-      const deltaY = touchStartY - y
-      touchStartY = y
-      if (locked) {
-        const handled = addDelta(deltaY)
-        if (handled && targetProgress < 1) {
-          e.preventDefault()
-        }
-      } else {
-        if (window.scrollY <= 10 && deltaY < 0) {
-          engageLock()
-          addDelta(deltaY)
-          e.preventDefault()
-        }
-      }
-    }
-
-    window.addEventListener("wheel", onWheel, { passive: false })
-    window.addEventListener("touchstart", onTouchStart, { passive: true })
-    window.addEventListener("touchmove", onTouchMove, { passive: false })
-
-    function frame() {
-      currentProgress += (targetProgress - currentProgress) * 0.18
-
-      if (duration > 0) {
-        seekTo(currentProgress * duration)
       }
 
       if (videoRef.current) {
-        const scale = 1 + currentProgress * 0.06
+        const scale = 1 + currentProgress * 0.05
         videoRef.current.style.transform = `scale(${scale})`
       }
+
       if (titleRef.current) {
+        // Title fades out and blurs as doors start opening (first 35% of scroll)
         const t = 1 - clamp(currentProgress / 0.35, 0, 1)
         titleRef.current.style.opacity = String(t)
-        titleRef.current.style.transform = `translateY(${(1 - t) * -24}px) scale(${0.96 + t * 0.04})`
-        titleRef.current.style.filter = `blur(${(1 - t) * 10}px)`
+        titleRef.current.style.transform = `translateY(${(1 - t) * -28}px) scale(${0.95 + t * 0.05})`
+        titleRef.current.style.filter = `blur(${(1 - t) * 12}px)`
       }
+
       if (hintRef.current) {
-        hintRef.current.style.opacity = hasStartedScrolling ? "0" : "1"
+        // Scroll hint disappears immediately once user begins scrolling
+        hintRef.current.style.opacity = currentProgress > 0.02 ? "0" : "1"
       }
+
       if (taglineRef.current) {
-        // Mirrors the title's blur-focus treatment, timed as the payoff
-        // once the reveal is nearly complete — not a background afterthought.
-        const t = clamp((currentProgress - 0.82) / 0.18, 0, 1)
+        // Tagline emerges and sharpens as doors fully open (last 30% of scroll)
+        const t = clamp((currentProgress - 0.70) / 0.30, 0, 1)
         taglineRef.current.style.opacity = String(t)
-        taglineRef.current.style.transform = `translateY(${(1 - t) * 20}px) scale(${0.97 + t * 0.03})`
-        taglineRef.current.style.filter = `blur(${(1 - t) * 8}px)`
+        taglineRef.current.style.transform = `translateY(${(1 - t) * 24}px) scale(${0.96 + t * 0.04})`
+        taglineRef.current.style.filter = `blur(${(1 - t) * 10}px)`
       }
+
       if (progressBarRef.current) {
         progressBarRef.current.style.transform = `scaleX(${currentProgress})`
       }
@@ -227,213 +136,189 @@ export default function MetroHero({
       rafId = requestAnimationFrame(frame)
     }
 
-    if (!reduceMotion) {
-      rafId = requestAnimationFrame(frame)
-    }
+    rafId = requestAnimationFrame(frame)
 
     return () => {
-      video.removeEventListener("loadeddata", onLoadedData)
+      window.removeEventListener("scroll", handleScroll)
+      window.removeEventListener("resize", handleScroll)
+      video.removeEventListener("loadedmetadata", handleReady)
+      video.removeEventListener("loadeddata", handleReady)
+      video.removeEventListener("canplay", handleReady)
+      video.removeEventListener("canplaythrough", handleReady)
       video.removeEventListener("seeked", onSeeked)
-      window.removeEventListener("wheel", onWheel)
-      window.removeEventListener("touchstart", onTouchStart)
-      window.removeEventListener("touchmove", onTouchMove)
       cancelAnimationFrame(rafId)
-      releaseLock()
     }
-  }, [scrubDistance])
+  }, [])
 
   return (
     <div
-      ref={sectionRef}
+      ref={containerRef}
       className={className}
       style={{
         position: "relative",
-        height: "100dvh",
+        height: `${scrollDistanceVh}vh`,
         width: "100%",
-        overflow: "hidden",
-        background: COL_BG,
         ...style,
       }}
     >
-      <video
-        ref={videoRef}
-        src={videoSrc}
-        muted
-        playsInline
-        preload="auto"
+      <div
         style={{
-          position: "absolute",
-          inset: 0,
+          position: "sticky",
+          top: 0,
+          left: 0,
           width: "100%",
-          height: "100%",
-          objectFit: "cover",
-          opacity: ready ? 1 : 0,
-          transformOrigin: "center center",
-          willChange: "transform",
-          transition: "opacity 0.6s ease",
-        }}
-      />
-
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background: "linear-gradient(180deg, rgba(5,7,13,0.35), rgba(5,7,13,0) 30%, rgba(5,7,13,0.15) 70%, rgba(5,7,13,0.55))",
-          pointerEvents: "none",
-        }}
-      />
-
-      <div
-        ref={titleRef}
-        style={{
-          position: "absolute",
-          inset: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "0 6%",
-          textAlign: "center",
-          pointerEvents: "none",
+          height: "100vh",
+          overflow: "hidden",
+          background: COL_BG,
         }}
       >
-        <span
+        <video
+          ref={videoRef}
+          src={videoSrc}
+          muted
+          playsInline
+          preload="auto"
           style={{
-            fontFamily: SANS,
-            fontWeight: 800,
-            fontSize: "clamp(30px, 7vw, 96px)",
-            lineHeight: 1,
-            letterSpacing: "-0.02em",
-            color: COL_TEXT,
-            textShadow: "0 4px 30px rgba(0,0,0,0.5)",
-            display: "inline-block",
-            willChange: "transform, filter, opacity",
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            opacity: ready ? 1 : 0,
+            transformOrigin: "center center",
+            willChange: "transform",
+            transition: "opacity 0.5s ease",
           }}
-        >
-          {title}
-        </span>
-      </div>
+        />
 
-      {tagline && (
         <div
-          ref={taglineRef}
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "linear-gradient(180deg, rgba(2,5,2,0.45) 0%, rgba(2,5,2,0.1) 30%, rgba(2,5,2,0.2) 70%, rgba(2,5,2,0.6) 100%)",
+            pointerEvents: "none",
+          }}
+        />
+
+        {/* Title */}
+        <div
+          ref={titleRef}
           style={{
             position: "absolute",
             inset: 0,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            padding: "0 8%",
+            padding: "0 6%",
             textAlign: "center",
-            opacity: 0,
             pointerEvents: "none",
           }}
         >
           <span
             style={{
               fontFamily: SANS,
-              fontWeight: 700,
-              fontSize: "clamp(20px, 3.4vw, 40px)",
-              lineHeight: 1.2,
-              letterSpacing: "-0.01em",
+              fontWeight: 800,
+              fontSize: "clamp(32px, 8vw, 100px)",
+              lineHeight: 1,
+              letterSpacing: "-0.03em",
               color: COL_TEXT,
-              textShadow: "0 4px 24px rgba(0,0,0,0.5)",
+              textShadow: "0 4px 30px rgba(0,0,0,0.8), 0 0 40px rgba(16,185,129,0.2)",
+              display: "inline-block",
+              willChange: "transform, filter, opacity",
             }}
           >
-            {tagline}
+            {title}
           </span>
         </div>
-      )}
 
-      <div
-        ref={hintRef}
-        style={{
-          position: "absolute",
-          left: "50%",
-          bottom: "clamp(20px, 6vh, 48px)",
-          transform: "translateX(-50%)",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 8,
-          color: "rgba(240,244,248,0.75)",
-          fontFamily: SANS,
-          fontSize: "clamp(10px, 1.4vw, 12px)",
-          fontWeight: 600,
-          letterSpacing: "0.3em",
-          transition: "opacity 0.4s ease",
-          pointerEvents: "none",
-        }}
-      >
-        <span>{scrollHint}</span>
-        <svg width="14" height="18" viewBox="0 0 14 18" style={{ animation: "metro-hero-bounce 1.6s ease-in-out infinite" }}>
-          <style>{`
-            @keyframes metro-hero-bounce {
-              0%, 100% { transform: translateY(0); opacity: 0.5; }
-              50% { transform: translateY(5px); opacity: 1; }
-            }
-          `}</style>
-          <path d="M7 1 L7 17 M2 12 L7 17 L12 12" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </div>
-
-      {/* Thin progress line — fills as the video advances. */}
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          bottom: 0,
-          height: 2,
-          background: "rgba(255,255,255,0.12)",
-        }}
-      >
-        <div
-          ref={progressBarRef}
-          style={{
-            height: "100%",
-            width: "100%",
-            background: "linear-gradient(90deg, rgba(255,255,255,0.5), rgba(255,255,255,0.95))",
-            transform: "scaleX(0)",
-            transformOrigin: "left center",
-          }}
-        />
-      </div>
-
-      {signature && (
-        <span
-          style={{
-            position: "absolute",
-            right: "clamp(12px, 2.5vw, 24px)",
-            bottom: "clamp(10px, 2vw, 18px)",
-            fontFamily: SANS,
-            fontWeight: 500,
-            fontSize: "clamp(11px, 1.4vw, 13px)",
-            letterSpacing: "0.01em",
-            color: "rgba(220,224,232,0.6)",
-            zIndex: 2,
-          }}
-        >
-          by{" "}
-          <a
-            href={signature.url}
-            target="_blank"
-            rel="noopener noreferrer"
+        {/* Tagline */}
+        {tagline && (
+          <div
+            ref={taglineRef}
             style={{
-              color: "rgba(220,224,232,0.6)",
-              textDecoration: "none",
-              transition: "color 0.2s ease",
-            }}
-            onMouseEnter={(e: React.MouseEvent<HTMLAnchorElement>) => {
-              e.currentTarget.style.color = COL_TEXT
-            }}
-            onMouseLeave={(e: React.MouseEvent<HTMLAnchorElement>) => {
-              e.currentTarget.style.color = "rgba(220,224,232,0.6)"
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "0 8%",
+              textAlign: "center",
+              opacity: 0,
+              pointerEvents: "none",
             }}
           >
-            {signature.name}
-          </a>
-        </span>
-      )}
+            <span
+              style={{
+                fontFamily: SANS,
+                fontWeight: 700,
+                fontSize: "clamp(22px, 3.8vw, 44px)",
+                lineHeight: 1.25,
+                letterSpacing: "-0.02em",
+                color: "#10b981",
+                textShadow: "0 4px 24px rgba(0,0,0,0.9), 0 0 20px rgba(16,185,129,0.3)",
+              }}
+            >
+              {tagline}
+            </span>
+          </div>
+        )}
+
+        {/* Scroll hint */}
+        <div
+          ref={hintRef}
+          style={{
+            position: "absolute",
+            left: "50%",
+            bottom: "clamp(24px, 6vh, 48px)",
+            transform: "translateX(-50%)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 8,
+            color: "rgba(243,244,246,0.85)",
+            fontFamily: SANS,
+            fontSize: "clamp(10px, 1.4vw, 12px)",
+            fontWeight: 700,
+            letterSpacing: "0.3em",
+            transition: "opacity 0.4s ease",
+            pointerEvents: "none",
+          }}
+        >
+          <span>{scrollHint}</span>
+          <svg width="14" height="18" viewBox="0 0 14 18" style={{ animation: "metro-hero-bounce 1.6s ease-in-out infinite" }}>
+            <style>{`
+              @keyframes metro-hero-bounce {
+                0%, 100% { transform: translateY(0); opacity: 0.5; }
+                50% { transform: translateY(5px); opacity: 1; }
+              }
+            `}</style>
+            <path d="M7 1 L7 17 M2 12 L7 17 L12 12" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+
+        {/* Thin progress line */}
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: 3,
+            background: "rgba(255,255,255,0.1)",
+          }}
+        >
+          <div
+            ref={progressBarRef}
+            style={{
+              height: "100%",
+              width: "100%",
+              background: "linear-gradient(90deg, #10b981, #3b82f6)",
+              transform: "scaleX(0)",
+              transformOrigin: "left center",
+            }}
+          />
+        </div>
+      </div>
     </div>
   )
 }
