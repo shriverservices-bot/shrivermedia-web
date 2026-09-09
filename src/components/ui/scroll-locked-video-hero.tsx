@@ -9,7 +9,7 @@ export interface MetroHeroProps {
   scrollHint?: string
   tagline?: string
   signature?: { name: string; url: string } | false
-  /** Total height of scroll track in vh (e.g. 240 for 240vh) */
+  /** Total height of scroll track in vh (e.g. 200 for 200vh) */
   scrollDistanceVh?: number
   className?: string
   style?: React.CSSProperties
@@ -31,7 +31,7 @@ export default function MetroHero({
   scrollHint = "SCROLL TO ENTER",
   tagline = "Engineering high-performance digital experiences.",
   signature = false,
-  scrollDistanceVh = 240,
+  scrollDistanceVh = 200,
   className,
   style,
 }: MetroHeroProps) {
@@ -90,16 +90,51 @@ export default function MetroHero({
     window.addEventListener("resize", handleScroll, { passive: true })
     handleScroll()
 
-    // Smooth render loop
+    // High-performance hardware video tracking loop
     const frame = () => {
-      // Smooth lerping for video seeking
-      currentProgress += (targetProgress - currentProgress) * 0.22
+      // Responsive progressive tracking
+      currentProgress += (targetProgress - currentProgress) * 0.3
 
       if (duration > 0 && video) {
         const targetTime = currentProgress * duration
-        if (!isSeeking && Math.abs(video.currentTime - targetTime) > 0.015) {
-          isSeeking = true
-          video.currentTime = targetTime
+        const diff = targetTime - video.currentTime
+
+        if (diff > 0.035) {
+          // Scrolling forward: Use hardware video stream decoding (no seek stutter)
+          if (diff > 1.2) {
+            video.currentTime = targetTime - 0.2
+          }
+          const playbackSpeed = Math.min(5.0, Math.max(0.8, diff * 6.5))
+          video.playbackRate = playbackSpeed
+          if (video.paused) {
+            const playPromise = video.play()
+            if (playPromise !== undefined) playPromise.catch(() => {})
+          }
+        } else if (diff < -0.04) {
+          // Scrolling backward: Pause and seek
+          if (!video.paused) {
+            video.pause()
+          }
+          if (!isSeeking) {
+            isSeeking = true
+            if ("fastSeek" in video) {
+              try {
+                ;(video as any).fastSeek(targetTime)
+              } catch {
+                video.currentTime = targetTime
+              }
+            } else {
+              video.currentTime = targetTime
+            }
+            setTimeout(() => {
+              isSeeking = false
+            }, 60)
+          }
+        } else {
+          // At target: Pause smoothly on target frame
+          if (!video.paused) {
+            video.pause()
+          }
         }
       }
 
