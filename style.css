@@ -576,6 +576,7 @@ footer {
   transition: var(--transition);
   cursor: pointer;
   overflow: hidden;
+  text-decoration: none;
 }
 
 .partner-card img {
