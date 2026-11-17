@@ -2,9 +2,11 @@
 
 import React, { useEffect, useRef, useState } from "react"
 import subwayVideo from "../../../media/subway-hero.mp4"
+import subwayPoster from "../../../media/subway-poster.jpg"
 
 export interface MetroHeroProps {
   videoSrc?: string
+  posterSrc?: string
   title?: string
   scrollHint?: string
   tagline?: string
@@ -15,7 +17,8 @@ export interface MetroHeroProps {
   style?: React.CSSProperties
 }
 
-const DEFAULT_VIDEO = subwayVideo || "https://raw.githubusercontent.com/gughigug/metro-hero-assets/main/Subway_doors_open_to_city_202608242331.mp4"
+const DEFAULT_VIDEO = subwayVideo
+const DEFAULT_POSTER = subwayPoster
 const SANS = "Outfit, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
 
 const COL_BG = "#020502"
@@ -27,6 +30,7 @@ function clamp(v: number, min: number, max: number) {
 
 export default function MetroHero({
   videoSrc = DEFAULT_VIDEO,
+  posterSrc = DEFAULT_POSTER,
   title = "JSHRIVER MEDIA",
   scrollHint = "SCROLL TO ENTER",
   tagline = "Engineering high-performance digital experiences.",
@@ -48,37 +52,77 @@ export default function MetroHero({
     const container = containerRef.current
     if (!video || !container) return
 
-    let duration = 0
+    // Explicitly configure DOM properties for iOS Safari / Mobile WebKit
+    video.muted = true
+    video.defaultMuted = true
+    video.playsInline = true
+    video.setAttribute("playsinline", "true")
+    video.setAttribute("webkit-playsinline", "true")
+    video.setAttribute("x5-playsinline", "true")
+
+    let duration = video.duration && !isNaN(video.duration) && video.duration > 0 ? video.duration : 8.0
     let targetProgress = 0
     let currentProgress = 0
     let rafId = 0
     let isSeeking = false
+    let seekTimeout: NodeJS.Timeout | null = null
 
     const handleReady = () => {
       if (video.duration && !isNaN(video.duration) && video.duration > 0) {
         duration = video.duration
-        setReady(true)
       }
+      setReady(true)
     }
 
     video.addEventListener("loadedmetadata", handleReady)
     video.addEventListener("loadeddata", handleReady)
     video.addEventListener("canplay", handleReady)
     video.addEventListener("canplaythrough", handleReady)
+    video.addEventListener("durationchange", handleReady)
+    video.addEventListener("timeupdate", handleReady)
 
-    if (video.readyState >= 1 && video.duration) {
+    if (video.readyState >= 1) {
       handleReady()
     }
 
+    // Prime the video decoder on mobile turn
+    const primeVideo = () => {
+      if (video) {
+        video.muted = true
+        handleReady()
+        const playPromise = video.play()
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              video.pause()
+              setReady(true)
+            })
+            .catch(() => {
+              setReady(true)
+            })
+        }
+      }
+    }
+
+    // Try priming immediately and on first user touch/scroll gesture
+    primeVideo()
+    window.addEventListener("touchstart", primeVideo, { once: true, passive: true })
+    window.addEventListener("pointerdown", primeVideo, { once: true, passive: true })
+
     const onSeeked = () => {
       isSeeking = false
+      if (seekTimeout) {
+        clearTimeout(seekTimeout)
+        seekTimeout = null
+      }
     }
     video.addEventListener("seeked", onSeeked)
 
     const handleScroll = () => {
       if (!container) return
       const rect = container.getBoundingClientRect()
-      const scrollableDistance = container.offsetHeight - window.innerHeight
+      const vh = window.innerHeight || document.documentElement.clientHeight || 800
+      const scrollableDistance = container.offsetHeight - vh
       if (scrollableDistance <= 0) return
 
       const scrolled = -rect.top
@@ -90,51 +134,30 @@ export default function MetroHero({
     window.addEventListener("resize", handleScroll, { passive: true })
     handleScroll()
 
-    // High-performance hardware video tracking loop
+    // Smooth frame render loop
     const frame = () => {
-      // Responsive progressive tracking
-      currentProgress += (targetProgress - currentProgress) * 0.3
+      currentProgress += (targetProgress - currentProgress) * 0.25
 
-      if (duration > 0 && video) {
-        const targetTime = currentProgress * duration
-        const diff = targetTime - video.currentTime
+      if (video) {
+        const activeDuration = duration > 0 ? duration : 8.0
+        const targetTime = clamp(currentProgress * activeDuration, 0, activeDuration - 0.04)
 
-        if (diff > 0.035) {
-          // Scrolling forward: Use hardware video stream decoding (no seek stutter)
-          if (diff > 1.2) {
-            video.currentTime = targetTime - 0.2
-          }
-          const playbackSpeed = Math.min(5.0, Math.max(0.8, diff * 6.5))
-          video.playbackRate = playbackSpeed
-          if (video.paused) {
-            const playPromise = video.play()
-            if (playPromise !== undefined) playPromise.catch(() => {})
-          }
-        } else if (diff < -0.04) {
-          // Scrolling backward: Pause and seek
-          if (!video.paused) {
-            video.pause()
-          }
-          if (!isSeeking) {
-            isSeeking = true
-            if ("fastSeek" in video) {
-              try {
-                ;(video as any).fastSeek(targetTime)
-              } catch {
-                video.currentTime = targetTime
-              }
-            } else {
+        if (!isSeeking && Math.abs(video.currentTime - targetTime) > 0.03) {
+          isSeeking = true
+          if ("fastSeek" in video) {
+            try {
+              ;(video as any).fastSeek(targetTime)
+            } catch {
               video.currentTime = targetTime
             }
-            setTimeout(() => {
-              isSeeking = false
-            }, 60)
+          } else {
+            video.currentTime = targetTime
           }
-        } else {
-          // At target: Pause smoothly on target frame
-          if (!video.paused) {
-            video.pause()
-          }
+
+          if (seekTimeout) clearTimeout(seekTimeout)
+          seekTimeout = setTimeout(() => {
+            isSeeking = false
+          }, 45)
         }
       }
 
@@ -144,7 +167,7 @@ export default function MetroHero({
       }
 
       if (titleRef.current) {
-        // Title fades out and blurs as doors start opening (first 35% of scroll)
+        // Title fades out and blurs as doors open (first 35% of scroll)
         const t = 1 - clamp(currentProgress / 0.35, 0, 1)
         titleRef.current.style.opacity = String(t)
         titleRef.current.style.transform = `translateY(${(1 - t) * -28}px) scale(${0.95 + t * 0.05})`
@@ -176,11 +199,16 @@ export default function MetroHero({
     return () => {
       window.removeEventListener("scroll", handleScroll)
       window.removeEventListener("resize", handleScroll)
+      window.removeEventListener("touchstart", primeVideo)
+      window.removeEventListener("pointerdown", primeVideo)
       video.removeEventListener("loadedmetadata", handleReady)
       video.removeEventListener("loadeddata", handleReady)
       video.removeEventListener("canplay", handleReady)
       video.removeEventListener("canplaythrough", handleReady)
+      video.removeEventListener("durationchange", handleReady)
+      video.removeEventListener("timeupdate", handleReady)
       video.removeEventListener("seeked", onSeeked)
+      if (seekTimeout) clearTimeout(seekTimeout)
       cancelAnimationFrame(rafId)
     }
   }, [])
@@ -202,16 +230,23 @@ export default function MetroHero({
           top: 0,
           left: 0,
           width: "100%",
-          height: "100vh",
+          height: "100dvh",
+          minHeight: "100vh",
           overflow: "hidden",
-          background: COL_BG,
+          backgroundColor: COL_BG,
+          backgroundImage: `url(${posterSrc})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center center",
+          backgroundRepeat: "no-repeat",
         }}
       >
         <video
           ref={videoRef}
           src={videoSrc}
+          poster={posterSrc}
           muted
           playsInline
+          autoPlay
           preload="auto"
           style={{
             position: "absolute",
@@ -219,10 +254,9 @@ export default function MetroHero({
             width: "100%",
             height: "100%",
             objectFit: "cover",
-            opacity: ready ? 1 : 0,
+            opacity: 1,
             transformOrigin: "center center",
             willChange: "transform",
-            transition: "opacity 0.5s ease",
           }}
         />
 
